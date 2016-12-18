@@ -20,11 +20,12 @@
 
 #include <SPI.h>
 #include <WiFi101.h>
+#include "MMA7660.h"
+MMA7660 accelemeter;
 
-
-char ssid[] = "";      // your network SSID (name)
-char pass[] = "";   // your network password
-nt keyIndex = 0;                 // your network key Index number (needed only for WEP)
+char ssid[] = "#########";      // your network SSID (name)
+char pass[] = "########";   // your network password
+int keyIndex = 0;                 // your network key Index number (needed only for WEP)
 
 int status = WL_IDLE_STATUS;
 
@@ -32,6 +33,7 @@ WiFiServer server(80);
 
 void setup() {
   //Initialize serial and wait for port to open:
+    accelemeter.init();  
   Serial.begin(9600);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
@@ -122,7 +124,7 @@ if (vr) {
   client.println("    <a-sphere class='throwable' dynamic-body position='0.20 0.25 -0.15' radius='0.10' color='white'></a-sphere>");
   client.println("    <a-sphere class='throwable' dynamic-body position='-0.20 0.25 -0.15' radius='0.10' color='white'></a-sphere>");
     
-  client.println(" <a-entity static-body position='0 1 -5'>");
+  client.println(" <a-entity static-body position='0 1 -3'>");
   client.println("    <a-sphere class='sphere' static-body position=\"0 0 -5\" radius=\"2\" material=\"shader: standard; color: #fff; metalness: 0; roughness: 1\"></a-sphere>");
   client.println("    <a-sphere class='sphere' static-body position=\"0 2 -5\" radius=\"1.7\" material=\"shader: standard; color: #fff; metalness: 0; roughness: 1\"></a-sphere>");
   client.println("    <a-sphere class='sphere' static-body position=\"0 4 -5\" radius=\"1.3\" material=\"shader: standard; color: #fff; metalness: 0; roughness: 1\"></a-sphere>");
@@ -148,7 +150,7 @@ if (vr) {
   
   client.println("var snowList = document.querySelector('#snowList');");
   client.println("var maxSnow = 50;");
-  client.println("var indexSnow = snowList.childElementCount - 1;");
+  client.println("var indexSnow = 0;");
    
   client.println("function addSnow() {");
   client.println("  var newSnow = document.createElement('a-entity');");
@@ -158,13 +160,17 @@ if (vr) {
   client.println("}");
 
   client.println("function disableSnow(snowElement) {");
+  client.println("  if (snowElement != null && snowElement.components['particle-system'] != null) {");
   client.println("    var pg = snowElement.components['particle-system'].particleGroup;");
   client.println("    pg.emitters[0].disable();");
+  client.println("  }");
   client.println("}");
 
   client.println("function enableSnow(snowElement) {");
+  client.println("  if (snowElement != null && snowElement.components['particle-system'] != null) {");
   client.println("    var pg = snowElement.components['particle-system'].particleGroup;");
   client.println("    pg.emitters[0].enable();");
+  client.println("  }");
   client.println("}");
   
   client.println("function removeSnow(snowList) {");
@@ -187,10 +193,16 @@ if (vr) {
    
     client.println("var snowlist = document.querySelector('#snowList');");
    //client.println("removeSnow(snowList);");
-   client.println("disableSnow(snowlist[indexSnow]);");
-   client.println("indexSnow--;");
-   client.println("if (result.channel0 > 470) {");
-   client.println("       snowList.foreach(function(snow) { enableSnow(snow); });");
+   client.println("if (indexSnow > 0) {");
+   client.println("disableSnow(snowlist.children[indexSnow--]);");
+   client.println("disableSnow(snowlist.children[indexSnow--]);");   
+   client.println("disableSnow(snowlist.children[indexSnow--]);");
+   client.println("disableSnow(snowlist.children[indexSnow--]);");
+   client.println("disableSnow(snowlist.children[indexSnow--]);");
+   client.println("}");
+   client.println("if (result.channel0 <= 2.10 && result.channel0 >= 1.90 ) {");
+   client.println("       Array.from(snowList.children).forEach(function(snow) { enableSnow(snow); });");
+   client.println("       indexSnow = snowList.childElementCount - 1;");
    //client.println("  var fragment = document.createDocumentFragment(); fragment.appendChild(addSnow(snowList));");
    //client.println("  fragment.appendChild(addSnow(snowList));");
    //client.println("  fragment.appendChild(addSnow(snowList));");
@@ -209,9 +221,10 @@ if (vr) {
   client.println("  docFrag.appendChild(addSnow()); // Note that this does NOT go to the DOM");
   client.println("}");
   
-  client.println("snowList.appendChild(docFrag);");
-  client.println("snowList.foreach(function(snow) { disableSnow(snow); });");
-  client.println("setInterval(function() { checkUpdates('/updates') }, 5000);");
+  client.println("snowList.appendChild(docFrag);");   
+  client.println("indexSnow = snowList.childElementCount - 1;");
+  client.println("Array.from(snowList.children).forEach(function(snow) { disableSnow(snow); });");
+  client.println("setInterval(function() { checkUpdates('/updates') }, 2000);");
   client.println("</script>");
           client.println("</body>");
           client.println("</html>");
@@ -219,9 +232,13 @@ if (vr) {
     client.println("Content-Type: application/json");
   client.println("Connection: close");  // the connection will be closed after completion of the response
   client.println();
-  int sensorReading = analogRead(0);
+  float ax,ay,az;
+  accelemeter.getAcceleration(&ax,&ay,&az);
+  //int sensorReading = analogRead(0);
   client.print("{\"channel0\":");
-  client.print(sensorReading);
+  //client.print(sensorReading);
+  client.print(az);
+  Serial.print(az);
   client.print("}");
           // output the value of each analog input pin
           //for (int analogChannel = 0; analogChannel < 6; analogChannel++) {
@@ -274,5 +291,4 @@ void printWifiStatus() {
   Serial.print("signal strength (RSSI):");
   Serial.print(rssi);
   Serial.println(" dBm");
-}
 }
