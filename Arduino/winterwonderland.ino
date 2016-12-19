@@ -1,17 +1,12 @@
 /*
-  WiFi Web Server
+  Snow Globe WiFi Web Server
 
- A simple web server that shows the value of the analog input pins.
+ A simple VR web server that shows the value from accelerometer
  using a WiFi shield.
 
- This example is written for a network using WPA encryption. For
- WEP or WPA, change the Wifi.begin() call accordingly.
-
- Circuit:
- * WiFi shield attached
- * Analog inputs attached to pins A0 through A5 (optional)
-
- created 13 July 2010
+ by Ron Dagdag @rondagdag
+ 
+ template from 
  by dlf (Metodo2 srl)
  modified 31 May 2012
  by Tom Igoe
